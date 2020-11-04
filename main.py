@@ -3,8 +3,7 @@ import time
 import platform
 import subprocess
 import tkinter as tk
-if(platform.system() == "Windows"):
-    import pywin32
+from windows_helper import win_detect_usb
 
             
 
@@ -41,17 +40,25 @@ class StartPage(tk.Frame):
         self.after(1000, self.device_update_loop)
 
     def update_devices_helper(self):
+        devices = []
         os_platform = platform.system()
         if(os_platform == "Linux"):
-            self.update_devices_linux()
+            devices = self.update_devices_linux()
         elif(os_platform == "Windows"):
-            self.update_devices_windows()
+            devices = win_detect_usb()
         else:
             error_label = tk.Label(self, text="Unsupported Platform", fg="red")
             error_label.pack(pady=20, padx=20)
-    
-    def update_devices_windows(self):
-        devices = []
+
+        # Remove Previous Device List
+        self.remove_devices()
+
+        # Display the New Device List
+        for device in devices:
+            new_device_label = tk.Label(self, text=device['tag'])
+            self.device_labels.append(new_device_label)
+            new_device_label.pack(pady=10, padx=10)
+
 
     def update_devices_linux(self):
         devices = []
@@ -64,15 +71,9 @@ class StartPage(tk.Frame):
                     dinfo = info.groupdict()
                     dinfo['device'] = '/dev/bus/usb/%s/%s' % (dinfo.pop('bus'), dinfo.pop('device'))
                     devices.append(dinfo)
+        return devices
 
-        # Remove Previous Device List
-        self.remove_devices()
 
-        # Display the New Device List
-        for device in devices:
-            new_device_label = tk.Label(self, text=device['tag'])
-            self.device_labels.append(new_device_label)
-            new_device_label.pack(pady=10, padx=10)
 
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
